@@ -66,7 +66,16 @@ struct CLI: AsyncParsableCommand {
         let indent = String(repeating: " ", count: depth)
         let deviceWidth = 4
         let costWidth = 5
-        block.operations.forEach { op in
+
+        let ops = block.operations.map { op in
+            let deviceUsage = plan.deviceUsage(for: op)
+            let cost = plan.estimatedCost(of: op)
+            return OpStats(op: op, cost: cost, deviceUsage: deviceUsage)
+        }
+        let totalCost = ops.compactMap({ $0.cost?.weight }).reduce(0, { $0 + $1 })
+
+        ops.forEach { opStats in
+            let op = opStats.op
             let outputs = op.outputs.map {
                 $0.name
             }.joined(separator: ", ")
@@ -75,17 +84,25 @@ struct CLI: AsyncParsableCommand {
             }.joined(separator: ", ")
             
             // Show device support.
-            let deviceUsage = plan.deviceUsage(for: op)
-            let deviceIcons = (deviceUsage?.icons ?? "").padding(toLength: deviceWidth, withPad: " ", startingAt: 0)
+            let deviceIcons = (opStats.deviceUsage?.icons ?? "")
+                .padding(toLength: deviceWidth, withPad: " ", startingAt: 0)
             
             // Show total cost.
-            let cost = plan.estimatedCost(of: op)
-            let formattedCost = (cost.map({String(format: "%.2f", 100*$0.weight) + "%"}) ?? "").padding(toLength: costWidth, withPad: " ", startingAt: 0)
+            let costPercentage = opStats.cost.map({ 100 * $0.weight / totalCost })
+            let formattedCost = (costPercentage.map({String(format: "%.2f", $0) + "%"}) ?? "")
+                .padding(toLength: costWidth, withPad: " ", startingAt: 0)
                 
             print("\(formattedCost) \(deviceIcons)\(indent)\(outputs) = \(op.operatorName)(\(inputs))")
         }
         print("\(String(repeating: " ", count: deviceWidth + 1 + costWidth))\(indent)-> (\(block.outputNames.joined(separator:", ")))")
     }
+}
+
+@available(macOS 14.4, *)
+struct OpStats {
+    let op: MLModelStructure.Program.Operation
+    let cost: MLComputePlan.Cost?
+    let deviceUsage: MLComputePlan.DeviceUsage?
 }
 
 @available(macOS 14.4, *)
