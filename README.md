@@ -22,3 +22,8 @@ func main(input_ids) {
            var_137 = const()
 0.17% G|CN var_145_cast_fp16 = ios16.mul(x: ["x_1_cast_fp16"], y: ["x_1_cast_fp16"])
 ```
+
+If you have the [just](https://github.com/casey/just) command runner installed:
+```shell
+just inspect my_model
+```
