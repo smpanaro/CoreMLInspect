@@ -1,3 +1,3 @@
 inspect PACKAGE:
     xcrun coremlcompiler compile {{PACKAGE}}.mlpackage .
-    swift run CoreMLInspect --model-path {{PACKAGE}}.mlmodelc
+    swift run CoreMLInspect --model-path $(basename {{PACKAGE}}).mlmodelc
